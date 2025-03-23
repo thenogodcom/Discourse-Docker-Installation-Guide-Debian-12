@@ -1,77 +1,77 @@
-# Discourse 安装指南 (Debian 12, Root 用户)
+# Discourse 安裝指南 (Debian 12, Root 用戶)
 
-本指南介绍如何在 Debian 12 上使用 **root 用户** 安装 Discourse。
+本指南介紹如何在 Debian 12 上使用 **root 用戶** 安裝 Discourse。
 
-**重要提示 (安全风险):**
+**重要提示 (安全風險):**
 
-*   **直接以 root 用户身份运行所有命令存在安全风险。** 如果 Discourse 或 Docker 存在安全漏洞，攻击者可能会更容易获得系统的 root 权限。
-*   **强烈建议** 创建一个普通用户，并使用 `sudo` 来执行需要 root 权限的命令。请参考其他更安全的安装教程。
-*   只有在你 *完全了解* 安全风险，并且有充分的理由这样做的情况下，才直接以 root 用户身份运行所有命令。
+*   **直接以 root 用戶身分執行所有命令存在安全風險。** 如果 Discourse 或 Docker 存在安全漏洞，攻擊者可能會更容易獲得系統的 root 權限。
+*   **強烈建議** 建立一個普通用戶，並使用 `sudo` 來執行需要 root 權限的命令。請參考其他更安全的安裝教程。
+*   只有在你 *完全了解* 安全風險，並且有充分的理由這樣做的情況下，才直接以 root 用戶身分執行所有命令。
 
-## 安装步骤
+## 安裝步驟
 
-### 1. 系统准备
+### 1. 系統準備
 
-*   通过 SSH 连接到你的 VPS，并以 root 用户身份登录。
-*   更新系统：
+*   通過 SSH 連接到你的 VPS，並以 root 用戶身分登錄。
+*   更新系統：
 
     ```bash
     apt update
     apt upgrade -y
     ```
 
-*   安装 `sudo` (如果未安装，但后续命令可能会用到)：
+*   安裝 `sudo` (如果未安裝，但後續命令可能會用到)：
 
     ```bash
     apt install -y sudo
     ```
 
-### 2. 安装 Docker
+### 2. 安裝 Docker
 
-*   安装依赖：
+*   安裝依賴：
 
     ```bash
     apt update
     apt install -y apt-transport-https ca-certificates curl gnupg lsb-release
     ```
 
-*   添加 Docker 官方 GPG 密钥：
+*   添加 Docker 官方 GPG 金鑰：
 
     ```bash
     curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
     ```
 
-*   设置 Docker 稳定版仓库：
+*   設定 Docker 穩定版倉庫：
 
     ```bash
     echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
     ```
 
-*   安装 Docker Engine, containerd, 和 Docker Compose 插件：
+*   安裝 Docker Engine, containerd, 和 Docker Compose 外掛程式：
 
     ```bash
     apt update
     apt install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
     ```
 
-*   验证 Docker 安装：
+*   驗證 Docker 安裝：
 
     ```bash
     docker run hello-world
     ```
 
-### 3. 安装 Git
+### 3. 安裝 Git
 
 ```bash
 apt update
 apt install -y git
 ```
 
-### 4. 配置 Docker 日志 (可选，但建议)
+### 4. 配置 Docker 日誌 (可選，但建議)
 ```bash
 nano /etc/docker/daemon.json
 ```
-*   将以下内容复制到文件中：
+*   將以下內容複製到文件中：
 ```bash
 {
     "log-driver": "json-file",
@@ -81,75 +81,75 @@ nano /etc/docker/daemon.json
     }
 }
 ```
-*   保存并退出 (Ctrl+X, Y, Enter)。
+*   儲存並退出 (Ctrl+X, Y, Enter)。
 
-*   重启 Docker：
+*   重新啟動 Docker：
 ```bash
 systemctl restart docker
 ```
 
-### 5. 安装 Discourse
+### 5. 安裝 Discourse
 
-*   创建 Discourse 安装目录：
+*   建立 Discourse 安裝目錄：
 ```bash
 mkdir -p /var/discourse
 cd /var/discourse
 ```
 
-*   克隆 Discourse Docker 仓库：
+*   克隆 Discourse Docker 倉庫：
 ```bash
 git clone https://github.com/discourse/discourse_docker.git .
 ```
 
-*   复制并编辑配置文件：
+*   複製並編輯配置檔案：
 ```bash
 cp samples/standalone.yml containers/app.yml
 nano containers/app.yml
 ```
 
-*   修改 app.yml 配置文件 (重要)：
+*   修改 app.yml 配置檔案 (重要)：
 ```bash
-DISCOURSE_HOSTNAME: 你的论坛域名 (例如 forum.example.com)。
+DISCOURSE_HOSTNAME: 你的論壇域名 (例如 forum.example.com)。
 
-DISCOURSE_DEVELOPER_EMAILS: 管理员电子邮件地址 (多个地址用逗号分隔)。
+DISCOURSE_DEVELOPER_EMAILS: 管理員電子郵件地址 (多個地址用逗號分隔)。
 
-DISCOURSE_SMTP_ADDRESS: SMTP 服务器地址。
+DISCOURSE_SMTP_ADDRESS: SMTP 伺服器地址。
 
-DISCOURSE_SMTP_PORT: SMTP 服务器端口。
+DISCOURSE_SMTP_PORT: SMTP 伺服器端口。
 
-DISCOURSE_SMTP_USER_NAME: SMTP 用户名。
+DISCOURSE_SMTP_USER_NAME: SMTP 用戶名。
 
-DISCOURSE_SMTP_PASSWORD: SMTP 密码。
+DISCOURSE_SMTP_PASSWORD: SMTP 密碼。
 
-db_shared_buffers: 根据你的内存大小修改，2.5G内存，建议设置为683MB.
+db_shared_buffers: 根據你的記憶體大小修改，2.5G記憶體，建議設定為683MB.
 
-UNICORN_WORKERS: 根据你的CPU核心数修改, 2核CPU建议设置为2.
+UNICORN_WORKERS: 根據你的 CPU 核心數修改, 2 核 CPU 建議設定為 2。
 ```
-*  (可选) 添加 自动跳过邮箱激活注册插件 (例如 discourse-auth-no-email-verification):
+*  (可選) 添加 自動跳過信箱啟用註冊外掛程式 (例如 discourse-auth-no-email-verification):
 ```bash
             - git clone https://github.com/thenogodcom/discourse-auth-no-email-verification.git
 ```
 
-*  保存并关闭 app.yml 文件。
+*  儲存並關閉 app.yml 檔案。
 
 * 构建 Discourse 容器：
 ```bash
 ./launcher bootstrap app
 ```
 
-* 启动 Discourse 容器：
+* 啟動 Discourse 容器：
 ```bash
 ./launcher start app
 ```
 
-### 6. 完成 Discourse 设置向导
+### 6. 完成 Discourse 設定嚮導
 
-在浏览器中访问你的论坛域名 (你在 app.yml 中设置的 DISCOURSE_HOSTNAME)。
+在瀏覽器中訪問你的論壇域名 (你在 app.yml 中設定的 DISCOURSE_HOSTNAME)。
 
-按照 Discourse 设置向导的提示完成初始设置。
+按照 Discourse 設定嚮導的提示完成初始設定。
 
-若选择添加 自动跳过邮箱激活注册插件，注册完成后访问:
+若選擇添加 自動跳過信箱啟用註冊外掛程式，註冊完成後訪問:
 ```bash
 https://DISCOURSE_HOSTNAME/t/welcome-to-discourse/5
 ```
-再次强调：使用 root 用户运行所有命令存在安全风险。请谨慎操作。
+再次強調：使用 root 用戶執行所有命令存在安全風險。請謹慎操作。
