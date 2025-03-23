@@ -1,155 +1,134 @@
-# Discourse 安裝指南 (Debian 12, Root 用戶)
+<!DOCTYPE html>
+<html lang="en">
+<body>
 
-本指南介紹如何在 Debian 12 上使用 **root 用戶** 安裝 Discourse。
+<h1>Discourse Installation Guide (Debian 12, Root User)</h1>
 
-**重要提示 (安全風險):**
+<p>This guide explains how to install Discourse on Debian 12 using the <strong>root user</strong>.</p>
 
-*   **直接以 root 用戶身分執行所有命令存在安全風險。** 如果 Discourse 或 Docker 存在安全漏洞，攻擊者可能會更容易獲得系統的 root 權限。
-*   **強烈建議** 建立一個普通用戶，並使用 `sudo` 來執行需要 root 權限的命令。請參考其他更安全的安裝教程。
-*   只有在你 *完全了解* 安全風險，並且有充分的理由這樣做的情況下，才直接以 root 用戶身分執行所有命令。
+<h2>Important Notice (Security Risks):</h2>
 
-## 安裝步驟
+<ul>
+    <li><strong>Running all commands directly as the root user poses security risks.</strong> If security vulnerabilities exist in Discourse or Docker, attackers may more easily gain root access to your system.</li>
+    <li>It is <strong>strongly recommended</strong> to create a regular user and use <code>sudo</code> to execute commands that require root privileges. Please refer to other more secure installation tutorials.</li>
+    <li>Only proceed with running all commands directly as the root user if you <em>fully understand</em> the security risks and have a valid reason for doing so.</li>
+</ul>
 
-### 1. 系統準備
+<h2>Installation Steps</h2>
 
-*   通過 SSH 連接到你的 VPS，並以 root 用戶身分登錄。
-*   更新系統：
+<h3>1. System Preparation</h3>
 
-    ```bash
-    apt update
-    apt upgrade -y
-    ```
+<ul>
+    <li>Connect to your VPS via SSH and log in as the root user.</li>
+    <li>Update the system:
+        <pre><code>apt update
+apt upgrade -y</code></pre>
+    </li>
+    <li>Install <code>sudo</code> (if not already installed, although subsequent commands may use it):
+        <pre><code>apt install -y sudo</code></pre>
+    </li>
+</ul>
 
-*   安裝 `sudo` (如果未安裝，但後續命令可能會用到)：
+<h3>2. Install Docker</h3>
 
-    ```bash
-    apt install -y sudo
-    ```
+<ul>
+    <li>Install dependencies:
+        <pre><code>apt update
+apt install -y apt-transport-https ca-certificates curl gnupg lsb-release</code></pre>
+    </li>
+    <li>Add Docker's official GPG key:
+        <pre><code>curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg</code></pre>
+    </li>
+    <li>Set up the Docker stable repository:
+        <pre><code>echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null</code></pre>
+    </li>
+    <li>Install Docker Engine, containerd, and Docker Compose plugin:
+        <pre><code>apt update
+apt install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin</code></pre>
+    </li>
+    <li>Verify Docker installation:
+        <pre><code>docker run hello-world</code></pre>
+    </li>
+</ul>
 
-### 2. 安裝 Docker
+<h3>3. Install Git</h3>
 
-*   安裝依賴：
+<pre><code>apt update
+apt install -y git</code></pre>
 
-    ```bash
-    apt update
-    apt install -y apt-transport-https ca-certificates curl gnupg lsb-release
-    ```
+<h3>4. Configure Docker Logging (Optional, but Recommended)</h3>
 
-*   添加 Docker 官方 GPG 金鑰：
-
-    ```bash
-    curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
-    ```
-
-*   設定 Docker 穩定版倉庫：
-
-    ```bash
-    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
-    ```
-
-*   安裝 Docker Engine, containerd, 和 Docker Compose 外掛程式：
-
-    ```bash
-    apt update
-    apt install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
-    ```
-
-*   驗證 Docker 安裝：
-
-    ```bash
-    docker run hello-world
-    ```
-
-### 3. 安裝 Git
-
-```bash
-apt update
-apt install -y git
-```
-
-### 4. 配置 Docker 日誌 (可選，但建議)
-```bash
-nano /etc/docker/daemon.json
-```
-*   將以下內容複製到文件中：
-```bash
-{
+<pre><code>nano /etc/docker/daemon.json</code></pre>
+<ul>
+    <li>Copy the following content into the file:
+        <pre><code>{
     "log-driver": "json-file",
     "log-opts": {
         "max-size": "50m",
         "max-file": "5"
     }
-}
-```
-*   儲存並退出 (Ctrl+X, Y, Enter)。
+}</code></pre>
+    </li>
+    <li>Save and exit (Ctrl+X, Y, Enter).</li>
+    <li>Restart Docker:
+        <pre><code>systemctl restart docker</code></pre>
+    </li>
+</ul>
 
-*   重新啟動 Docker：
-```bash
-systemctl restart docker
-```
+<h3>5. Install Discourse</h3>
 
-### 5. 安裝 Discourse
+<ul>
+    <li>Create the Discourse installation directory:
+        <pre><code>mkdir -p /var/discourse
+cd /var/discourse</code></pre>
+    </li>
+    <li>Clone the Discourse Docker repository:
+        <pre><code>git clone https://github.com/discourse/discourse_docker.git .</code></pre>
+    </li>
+    <li>Copy and edit the configuration file:
+        <pre><code>cp samples/standalone.yml containers/app.yml
+nano containers/app.yml</code></pre>
+    </li>
+    <li>Modify the <code>app.yml</code> configuration file (Important):
+        <pre><code>DISCOURSE_HOSTNAME: your forum domain (e.g., forum.example.com).
 
-*   建立 Discourse 安裝目錄：
-```bash
-mkdir -p /var/discourse
-cd /var/discourse
-```
+DISCOURSE_DEVELOPER_EMAILS: administrator email addresses (comma-separated for multiple addresses).
 
-*   克隆 Discourse Docker 倉庫：
-```bash
-git clone https://github.com/discourse/discourse_docker.git .
-```
+DISCOURSE_SMTP_ADDRESS: SMTP server address.
 
-*   複製並編輯配置檔案：
-```bash
-cp samples/standalone.yml containers/app.yml
-nano containers/app.yml
-```
+DISCOURSE_SMTP_PORT: SMTP server port.
 
-*   修改 app.yml 配置檔案 (重要)：
-```bash
-DISCOURSE_HOSTNAME: 你的論壇域名 (例如 forum.example.com)。
+DISCOURSE_SMTP_USER_NAME: SMTP username.
 
-DISCOURSE_DEVELOPER_EMAILS: 管理員電子郵件地址 (多個地址用逗號分隔)。
+DISCOURSE_SMTP_PASSWORD: SMTP password.
 
-DISCOURSE_SMTP_ADDRESS: SMTP 伺服器地址。
+db_shared_buffers: adjust according to your memory size; for 2.5GB RAM, it is recommended to set to 683MB.
 
-DISCOURSE_SMTP_PORT: SMTP 伺服器端口。
+UNICORN_WORKERS: adjust according to your CPU core count; for a 2-core CPU, it is recommended to set to 2.</code></pre>
+    </li>
+    <li>(Optional) Add the automatic skip email verification registration plugin (e.g., discourse-auth-no-email-verification):
+        <pre><code>            - git clone https://github.com/thenogodcom/discourse-auth-no-email-verification.git</code></pre>
+    </li>
+    <li>Save and close the <code>app.yml</code> file.</li>
+    <li>Bootstrap the Discourse container:
+        <pre><code>./launcher bootstrap app</code></pre>
+    </li>
+    <li>Launch the Discourse container:
+        <pre><code>./launcher start app</code></pre>
+    </li>
+</ul>
 
-DISCOURSE_SMTP_USER_NAME: SMTP 用戶名。
+<h3>6. Complete Discourse Setup Wizard</h3>
 
-DISCOURSE_SMTP_PASSWORD: SMTP 密碼。
+<ul>
+    <li>Access your forum domain (the <code>DISCOURSE_HOSTNAME</code> you set in <code>app.yml</code>) in a web browser.</li>
+    <li>Follow the prompts in the Discourse setup wizard to complete the initial configuration.</li>
+    <li>If you chose to add the automatic skip email verification registration plugin, after registration, visit:
+        <pre><code>https://DISCOURSE_HOSTNAME/t/welcome-to-discourse/5</code></pre>
+    </li>
+</ul>
 
-db_shared_buffers: 根據你的記憶體大小修改，2.5G記憶體，建議設定為683MB.
+<p><strong>Again, it is emphasized that using the root user to execute all commands poses security risks. Please operate with caution.</strong></p>
 
-UNICORN_WORKERS: 根據你的 CPU 核心數修改, 2 核 CPU 建議設定為 2。
-```
-*  (可選) 添加 自動跳過信箱啟用註冊外掛程式 (例如 discourse-auth-no-email-verification):
-```bash
-            - git clone https://github.com/thenogodcom/discourse-auth-no-email-verification.git
-```
-
-*  儲存並關閉 app.yml 檔案。
-
-* 构建 Discourse 容器：
-```bash
-./launcher bootstrap app
-```
-
-* 啟動 Discourse 容器：
-```bash
-./launcher start app
-```
-
-### 6. 完成 Discourse 設定嚮導
-
-在瀏覽器中訪問你的論壇域名 (你在 app.yml 中設定的 DISCOURSE_HOSTNAME)。
-
-按照 Discourse 設定嚮導的提示完成初始設定。
-
-若選擇添加 自動跳過信箱啟用註冊外掛程式，註冊完成後訪問:
-```bash
-https://DISCOURSE_HOSTNAME/t/welcome-to-discourse/5
-```
-再次強調：使用 root 用戶執行所有命令存在安全風險。請謹慎操作。
+</body>
+</html>
